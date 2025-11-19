@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database';
+import { LLMModule } from './llm';
 
 @Module({
   imports: [
@@ -18,6 +19,9 @@ import { DatabaseModule } from './database';
 
     // Database module (Prisma + Repositories)
     DatabaseModule,
+
+    // LLM module (Local LLM integration for AI-assisted features)
+    LLMModule,
 
     // GraphQL configuration - will be added back once we have resolvers
     // GraphQLModule.forRoot<ApolloDriverConfig>({
