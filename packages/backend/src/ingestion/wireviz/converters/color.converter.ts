@@ -75,7 +75,7 @@ export function parseColorCode(colorCode: string, standard: 'IEC' | 'DIN' = 'IEC
 /**
  * Get human-readable color name
  */
-function getColorDisplayName(code: string, standard: 'IEC' | 'DIN'): string {
+function getColorDisplayName(code: string, _standard: 'IEC' | 'DIN'): string {
   const names: Record<string, string> = {
     // IEC
     BK: 'Black',
