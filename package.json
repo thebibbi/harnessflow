@@ -1,0 +1,59 @@
+{
+  "name": "harnessflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Intelligent electrical change-impact engine for automotive wiring harness design",
+  "keywords": [
+    "automotive",
+    "wiring-harness",
+    "electrical-engineering",
+    "validation",
+    "cad"
+  ],
+  "homepage": "https://github.com/thebibbi/harnessflow#readme",
+  "bugs": {
+    "url": "https://github.com/thebibbi/harnessflow/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebibbi/harnessflow.git"
+  },
+  "license": "MIT",
+  "author": "HarnessFlow Team",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build": "pnpm -r build",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r test:watch",
+    "test:coverage": "pnpm -r test:coverage",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "pnpm -r type-check",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@types/node": "^20.10.4",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "turbo": "^1.11.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.12.0"
+}
