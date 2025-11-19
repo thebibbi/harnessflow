@@ -1,0 +1,388 @@
+// HarnessFlow Database Schema
+// Based on: docs/consolidated/DATA_MODEL_SPECIFICATION.md
+// Database: PostgreSQL 15+ with Apache AGE extension
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// PROJECT & METADATA
+// ============================================================================
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+
+  // Vehicle information
+  vehicleManufacturer String
+  vehicleModel        String
+  vehicleYear         Int
+  vehiclePlatform     String?
+  vehicleRegion       String[] // Array of regions
+
+  // Metadata
+  version     String   @default("1.0.0")
+  status      String   @default("draft") // draft, review, approved, production
+  asilRating  String?  // QM, ASIL-A, ASIL-B, ASIL-C, ASIL-D
+
+  // JSONB for flexible metadata
+  metadata    Json?    // ProjectMetadata
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  // Relations
+  ecus        ECU[]
+  wires       Wire[]
+  splices     Splice[]
+  features    Feature[]
+  networks    Network[]
+  components  Component[]
+  changeRequests ChangeRequest[]
+
+  @@map("projects")
+}
+
+// ============================================================================
+// ECU (Electronic Control Unit)
+// ============================================================================
+
+model ECU {
+  id           String   @id @default(uuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Identification
+  partNumber   String
+  name         String
+  manufacturer String
+  supplierCode String?
+
+  // Complex properties stored as JSONB (see DATA_MODEL_SPECIFICATION.md)
+  physical     Json?    // PhysicalProperties (dimensions, weight, temp, IP rating)
+  electrical   Json?    // ElectricalProperties (voltage, power, ground type)
+  software     Json?    // SoftwareInfo (version, bootloader, diagnostic protocols)
+  procurement  Json?    // ProcurementInfo (cost, lead time, lifecycle)
+  safety       Json?    // SafetyInfo (ASIL rating, certifications)
+  metadata     Json?    // ECUMetadata (datasheet_url, notes, custom fields)
+
+  // Audit fields
+  createdAt    DateTime @default(now())
+  createdBy    String
+  modifiedAt   DateTime @updatedAt
+  modifiedBy   String
+
+  // Relations
+  connectors   Connector[]
+  networkConnections NetworkMember[]
+
+  @@unique([projectId, partNumber])
+  @@index([projectId])
+  @@map("ecus")
+}
+
+// ============================================================================
+// CONNECTOR
+// ============================================================================
+
+model Connector {
+  id           String   @id @default(uuid())
+  ecuId        String?
+  ecu          ECU?     @relation(fields: [ecuId], references: [id], onDelete: Cascade)
+
+  // Identification
+  name         String
+  manufacturer String
+  partNumber   String
+
+  // Properties
+  type         String   // automotive_sealed, deutsch, molex, etc.
+  gender       String   // male, female, hermaphrodite
+  pinCount     Int
+
+  // JSONB for complex properties
+  physical     Json?    // ConnectorPhysical (IP rating, color, orientation, locking)
+  metadata     Json?    // ConnectorMetadata (datasheet, mounting location, zone, notes)
+
+  // Audit fields
+  createdAt    DateTime @default(now())
+  createdBy    String
+  modifiedAt   DateTime @updatedAt
+  modifiedBy   String
+
+  // Relations
+  pins         Pin[]
+
+  @@index([ecuId])
+  @@map("connectors")
+}
+
+// ============================================================================
+// PIN (Cavity)
+// ============================================================================
+
+model Pin {
+  id          String     @id @default(uuid())
+  connectorId String
+  connector   Connector  @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  // Identification
+  pinNumber   String     // "1", "A", "P47"
+  label       String?    // "GND", "VCC", "CAN_H"
+
+  // JSONB for complex properties
+  capabilities Json?     // PinCapabilities (io_type, voltage_range, current_limit, signal_types, features)
+  assignment   Json?     // PinAssignment (feature_id, signal_name, function, assigned info)
+  physical     Json?     // PinPhysical (terminal_type, wire_gauge_range, contact_material)
+  metadata     Json?     // PinMetadata (notes, test_points, service_manual_ref)
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  // Relations
+  wiresFrom   Wire[]    @relation("WireFromPin")
+  wiresTo     Wire[]    @relation("WireToPin")
+
+  @@unique([connectorId, pinNumber])
+  @@index([connectorId])
+  @@map("pins")
+}
+
+// ============================================================================
+// WIRE
+// ============================================================================
+
+model Wire {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String?  // "W1", "Rear_Fog_Power"
+
+  // Endpoints
+  fromPinId   String?
+  fromPin     Pin?     @relation("WireFromPin", fields: [fromPinId], references: [id], onDelete: SetNull)
+  toPinId     String?
+  toPin       Pin?     @relation("WireToPin", fields: [toPinId], references: [id], onDelete: SetNull)
+
+  // JSONB for complex properties
+  endpoints   Json?    // WireEndpoint[] (type, id, pin_number)
+  viaPoints   Json?    // WireViaPoint[] (splices, inline connectors, grommets)
+  physical    Json?    // WirePhysical (gauge, length, color, material, insulation, shielding)
+  electrical  Json?    // WireElectrical (resistance, current_rating, voltage_rating)
+  routing     Json?    // WireRouting (path, zones, bundle_id, protection)
+  metadata    Json?    // WireMetadata (part_number, cost_per_meter, notes)
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  @@index([projectId])
+  @@index([fromPinId])
+  @@index([toPinId])
+  @@map("wires")
+}
+
+// ============================================================================
+// SPLICE
+// ============================================================================
+
+model Splice {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String?  // "S1", "GND_Splice_Rear"
+  type        String   // crimp, ultrasonic, solder, terminal_block, junction_box
+
+  // Connected wires (stored as array of wire IDs)
+  wireIds     String[] // Array of Wire IDs
+
+  // JSONB for complex properties
+  physical    Json?    // SplicePhysical (part_number, gauges, current_rating, insulated)
+  location    Json?    // SpliceLocation (zone, coordinates, description)
+  metadata    Json?    // SpliceMetadata (installation_notes, test_point, service_accessible)
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  @@index([projectId])
+  @@map("splices")
+}
+
+// ============================================================================
+// FEATURE (Vehicle Function)
+// ============================================================================
+
+model Feature {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Identification
+  name        String
+  description String?
+  category    String   // powertrain, chassis, body, comfort, safety, infotainment, lighting, hvac, driver_assistance
+
+  // JSONB for complex properties
+  requirements    Json? // FeatureRequirements (pins, power, network, physical)
+  implementation  Json? // FeatureImplementation (ecu_id, pins, wires, components, software_module)
+  dependencies    Json? // FeatureDependency[] (requires, conflicts_with, optional_with)
+  safety          Json? // FeatureSafety (safety_relevant, asil_rating, fault_tolerance, diagnostic_required)
+  metadata        Json? // FeatureMetadata (requirement_ids, test_case_ids, cost, notes)
+
+  // Variants (which vehicle variants include this feature)
+  availableIn String[] // Array of variant IDs
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  @@index([projectId])
+  @@map("features")
+}
+
+// ============================================================================
+// COMPONENT (Physical Device)
+// ============================================================================
+
+model Component {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Identification
+  type        String   // switch, sensor, actuator, lamp, relay, fuse, diode, resistor, capacitor, motor, solenoid, speaker, antenna
+  name        String
+  manufacturer String?
+  partNumber   String?
+
+  // JSONB for complex properties
+  electrical  Json?    // ComponentElectrical (voltage, resistance, inductance, capacitance, current_draw, power)
+  physical    Json?    // ComponentPhysical (location, environment, operating_temp, ip_rating)
+  connection  Json?    // ComponentConnection (connector_id, direct_wire_ids, pin_mapping)
+  metadata    Json?    // ComponentMetadata (datasheet_url, service_interval, notes)
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  @@index([projectId])
+  @@map("components")
+}
+
+// ============================================================================
+// NETWORK (Communication Bus)
+// ============================================================================
+
+model Network {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Identification
+  name        String   // "CAN-HS", "LIN-Body"
+  protocol    String   // CAN, LIN, FlexRay, Ethernet, MOST
+
+  // JSONB for complex properties
+  configuration Json?  // NetworkConfiguration (baudrate, can_fd, termination)
+  physical      Json?  // NetworkPhysical (topology, backbone_wire_ids, stub_max_length, total_length)
+  load          Json?  // NetworkLoad (utilization_percent, max_utilization, message_count, bandwidth)
+  messages      Json?  // NetworkMessage[] (for CAN/LIN messages)
+  metadata      Json?  // NetworkMetadata (notes, diagnostic_address)
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  // Relations
+  members     NetworkMember[]
+
+  @@index([projectId])
+  @@map("networks")
+}
+
+// ============================================================================
+// NETWORK MEMBER (ECU on Network)
+// ============================================================================
+
+model NetworkMember {
+  id          String   @id @default(uuid())
+  networkId   String
+  network     Network  @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  ecuId       String
+  ecu         ECU      @relation(fields: [ecuId], references: [id], onDelete: Cascade)
+
+  // Properties
+  role        String   // master, slave, peer
+  wakeupCapable Boolean @default(false)
+
+  @@unique([networkId, ecuId])
+  @@index([networkId])
+  @@index([ecuId])
+  @@map("network_members")
+}
+
+// ============================================================================
+// CHANGE REQUEST
+// ============================================================================
+
+model ChangeRequest {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Request details
+  title       String
+  description String
+  type        String   // add_feature, remove_feature, modify_harness, replace_ecu, cost_reduction, safety_improvement
+
+  // JSONB for complex data
+  changes     Json?    // Change[] (type, entity_type, entity_id, data)
+  impact      Json?    // ImpactAnalysis (affected_components, electrical_impact, cost_impact, safety_impact)
+  approvals   Json?    // Approval[] (approver, decision, comment, timestamp)
+
+  // Status
+  status      String   @default("draft") // draft, review, impact_analysis, approved, rejected, implemented
+
+  // Audit fields
+  createdAt   DateTime @default(now())
+  createdBy   String
+  modifiedAt  DateTime @updatedAt
+  modifiedBy  String
+
+  @@index([projectId])
+  @@index([status])
+  @@map("change_requests")
+}
+
+// ============================================================================
+// INDEXES & PERFORMANCE
+// ============================================================================
+
+// Additional indexes will be added as query patterns emerge
+// Apache AGE graph queries will be added separately
