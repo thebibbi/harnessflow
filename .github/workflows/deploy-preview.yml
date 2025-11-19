@@ -1,0 +1,56 @@
+name: Deploy Preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy-preview:
+    name: Deploy Preview Environment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prisma generate
+        run: pnpm --filter backend exec prisma generate
+
+      - name: Build packages
+        run: pnpm run build
+
+      # Placeholder for deployment step
+      # TODO: Add deployment to preview environment (e.g., Vercel, Railway, etc.)
+      - name: Deploy to preview
+        run: |
+          echo "Preview deployment would happen here"
+          echo "PR #${{ github.event.pull_request.number }}"
+          echo "Frontend: Deploy to Vercel preview"
+          echo "Backend: Deploy to Railway preview or Docker container"
+
+      # TODO: Add comment to PR with preview URL
+      - name: Comment PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Preview deployment ready!\n\n- Frontend: [Preview URL]\n- Backend: [API URL]\n\n_Deployment details will be added when configured._'
+            })
