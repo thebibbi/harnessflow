@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 // import { Request, Response } from 'express';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DatabaseModule } from './database';
 
 @Module({
   imports: [
@@ -14,6 +15,9 @@ import { AppService } from './app.service';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Database module (Prisma + Repositories)
+    DatabaseModule,
 
     // GraphQL configuration - will be added back once we have resolvers
     // GraphQLModule.forRoot<ApolloDriverConfig>({
