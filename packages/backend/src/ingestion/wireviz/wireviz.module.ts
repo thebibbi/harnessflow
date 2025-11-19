@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { WireVizImportService } from './wireviz-import.service';
+import { DatabaseModule } from '../../database';
 
 /**
  * WireViz Module
@@ -15,6 +16,7 @@ import { WireVizImportService } from './wireviz-import.service';
  * ```
  */
 @Module({
+  imports: [DatabaseModule],
   providers: [WireVizImportService],
   exports: [WireVizImportService],
 })

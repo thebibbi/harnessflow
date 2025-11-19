@@ -6,7 +6,7 @@
 
 import { Module } from '@nestjs/common';
 import { ExcelImportService } from './excel-import.service';
-import { DatabaseModule } from '../../database/database.module';
+import { DatabaseModule } from '../../database';
 
 @Module({
   imports: [DatabaseModule],
