@@ -68,10 +68,11 @@ const PinSpecSchema = z.union([z.number(), z.string(), z.array(z.union([z.number
  *
  * Validates connection tuples:
  * - [connector1, pins, cable, wires, pins, connector2] (full)
+ * - [connector1, pins, cable, wires, connector2] (simplified - pins2 = wires)
  * - [connector1, pins, connector2] (direct connection)
  */
 export const ConnectionSchema = z.union([
-  // Full connection with cable
+  // Full connection with cable (6 elements)
   z.tuple([
     z.string(), // connector1
     PinSpecSchema, // pins on connector1
@@ -80,16 +81,18 @@ export const ConnectionSchema = z.union([
     PinSpecSchema, // pins on connector2
     z.string(), // connector2
   ]),
+  // Simplified connection with cable (5 elements - pins2 = wires)
+  z.tuple([
+    z.string(), // connector1
+    PinSpecSchema, // pins on connector1
+    z.string(), // cable
+    PinSpecSchema, // wires in cable (also used as pins2)
+    z.string(), // connector2
+  ]),
   // Direct connection (no cable)
   z.tuple([
     z.string(), // connector1
     PinSpecSchema, // pins
-    z.string(), // connector2
-  ]),
-  // Alternative: connector1, cable, connector2 (simple form)
-  z.tuple([
-    z.string(), // connector1
-    z.string(), // cable
     z.string(), // connector2
   ]),
 ]);
