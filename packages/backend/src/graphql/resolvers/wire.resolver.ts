@@ -8,6 +8,20 @@ import { WireType, ProjectType, PinType } from '../types';
 import { CreateWireInput, UpdateWireInput } from '../types/inputs';
 import { ProjectRepository } from '../../database/repositories/project.repository';
 
+/**
+ * Helper to convert Prisma null values to undefined for GraphQL compatibility
+ */
+function toGraphQL<
+  T extends { name?: string | null; fromPinId?: string | null; toPinId?: string | null },
+>(wire: T): T & { name?: string; fromPinId?: string; toPinId?: string } {
+  return {
+    ...wire,
+    name: wire.name ?? undefined,
+    fromPinId: wire.fromPinId ?? undefined,
+    toPinId: wire.toPinId ?? undefined,
+  };
+}
+
 @Resolver(() => WireType)
 export class WireResolver {
   constructor(
@@ -20,7 +34,8 @@ export class WireResolver {
    */
   @Query(() => WireType, { nullable: true })
   async wire(@Args('id', { type: () => ID }) id: string): Promise<WireType | null> {
-    return this.wireRepo.findById(id);
+    const wire = await this.wireRepo.findById(id);
+    return wire ? toGraphQL(wire) : null;
   }
 
   /**
@@ -30,9 +45,10 @@ export class WireResolver {
   async wiresByProject(
     @Args('projectId', { type: () => ID }) projectId: string
   ): Promise<WireType[]> {
-    return this.wireRepo.findMany({
+    const wires = await this.wireRepo.findMany({
       where: { projectId },
     });
+    return wires.map(toGraphQL);
   }
 
   /**
@@ -40,7 +56,8 @@ export class WireResolver {
    */
   @Query(() => [WireType])
   async wiresByPin(@Args('pinId', { type: () => ID }) pinId: string): Promise<WireType[]> {
-    return this.wireRepo.findByPin(pinId);
+    const wires = await this.wireRepo.findByPin(pinId);
+    return wires.map(toGraphQL);
   }
 
   /**
@@ -48,7 +65,7 @@ export class WireResolver {
    */
   @Mutation(() => WireType)
   async createWire(@Args('input') input: CreateWireInput): Promise<WireType> {
-    return this.wireRepo.create({
+    const wire = await this.wireRepo.create({
       project: { connect: { id: input.projectId } },
       fromPin: input.fromPinId ? { connect: { id: input.fromPinId } } : undefined,
       toPin: input.toPinId ? { connect: { id: input.toPinId } } : undefined,
@@ -60,6 +77,7 @@ export class WireResolver {
       createdBy: 'user', // TODO: Get from auth context
       modifiedBy: 'user',
     });
+    return toGraphQL(wire);
   }
 
   /**
@@ -70,7 +88,7 @@ export class WireResolver {
     @Args('id', { type: () => ID }) id: string,
     @Args('input') input: UpdateWireInput
   ): Promise<WireType> {
-    return this.wireRepo.update(id, {
+    const wire = await this.wireRepo.update(id, {
       name: input.name,
       fromPin: input.fromPinId ? { connect: { id: input.fromPinId } } : undefined,
       toPin: input.toPinId ? { connect: { id: input.toPinId } } : undefined,
@@ -80,6 +98,7 @@ export class WireResolver {
       metadata: input.metadata,
       modifiedBy: 'user', // TODO: Get from auth context
     });
+    return toGraphQL(wire);
   }
 
   /**
