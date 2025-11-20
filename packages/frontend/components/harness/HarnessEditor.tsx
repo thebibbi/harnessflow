@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -14,6 +14,7 @@ import ReactFlow, {
   Panel,
   ReactFlowProvider,
   ConnectionMode,
+  Connection,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -21,6 +22,7 @@ import { useHarnessStore } from '@/lib/store/harness-store';
 import { ECUNode } from './ECUNode';
 import { ConnectorNode } from './ConnectorNode';
 import { WireEdge } from './WireEdge';
+import { WireEditDialog } from './WireEditDialog';
 
 const nodeTypes = {
   ecuNode: ECUNode,
@@ -36,10 +38,43 @@ interface HarnessEditorProps {
 }
 
 function HarnessEditorInner() {
-  const { nodes, edges, onNodesChange, onEdgesChange, project, selectedNodeId, selectedEdgeId } =
-    useHarnessStore();
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    project,
+    selectedNodeId,
+    selectedEdgeId,
+    addWire,
+    isSaving,
+    lastSaved,
+  } = useHarnessStore();
+
+  const [editingWireId, setEditingWireId] = useState<string | null>(null);
 
   const proOptions = { hideAttribution: true };
+
+  // Handle new wire connections
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      // Extract pin IDs from handle IDs
+      // Handle format: "pinId-source" or "pinId-target"
+      const sourceHandleId = connection.sourceHandle;
+      const targetHandleId = connection.targetHandle;
+
+      if (!sourceHandleId || !targetHandleId) return;
+
+      // Remove the "-source" or "-target" suffix to get pin IDs
+      const fromPinId = sourceHandleId.replace('-source', '');
+      const toPinId = targetHandleId.replace('-target', '');
+
+      if (fromPinId && toPinId) {
+        addWire(fromPinId, toPinId);
+      }
+    },
+    [addWire]
+  );
 
   return (
     <div className="w-full h-screen flex flex-col">
@@ -55,6 +90,33 @@ function HarnessEditorInner() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Saving indicator */}
+            {isSaving && (
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>Saving...</span>
+              </div>
+            )}
+            {!isSaving && lastSaved && (
+              <div className="text-sm text-green-600">
+                ✓ Saved {new Date(lastSaved).toLocaleTimeString()}
+              </div>
+            )}
             <div className="text-sm text-gray-600">
               <span className="font-medium">{project?.ecus.length || 0}</span> ECUs
               <span className="mx-2">·</span>
@@ -71,6 +133,7 @@ function HarnessEditorInner() {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
@@ -119,7 +182,8 @@ function HarnessEditorInner() {
                 <li>• Drag nodes to reposition</li>
                 <li>• Scroll to zoom</li>
                 <li>• Click to select</li>
-                <li>• Double-click to expand pins</li>
+                <li>• Drag pin to pin to create wire</li>
+                <li>• Double-click connector to expand pins</li>
               </ul>
             </div>
           </Panel>
@@ -134,19 +198,30 @@ function HarnessEditorInner() {
                 </div>
               )}
               {selectedEdgeId && (
-                <div className="text-xs">
+                <div className="text-xs space-y-2">
                   <p className="text-gray-600">Selected: Wire {selectedEdgeId}</p>
+                  <button
+                    onClick={() => setEditingWireId(selectedEdgeId)}
+                    className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                  >
+                    Edit Wire Properties
+                  </button>
                 </div>
               )}
             </Panel>
           )}
         </ReactFlow>
+
+        {/* Wire Edit Dialog */}
+        {editingWireId && (
+          <WireEditDialog wireId={editingWireId} onClose={() => setEditingWireId(null)} />
+        )}
       </div>
     </div>
   );
 }
 
-export function HarnessEditor({ projectId }: HarnessEditorProps) {
+export function HarnessEditor({ projectId: _projectId }: HarnessEditorProps) {
   return (
     <ReactFlowProvider>
       <HarnessEditorInner />

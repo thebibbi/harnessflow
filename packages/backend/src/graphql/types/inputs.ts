@@ -14,25 +14,25 @@ import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
 @InputType()
 export class CreateProjectInput {
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  vehicleManufacturer: string;
+  vehicleManufacturer!: string;
 
   @Field()
-  vehicleModel: string;
+  vehicleModel!: string;
 
   @Field(() => Int)
-  vehicleYear: number;
+  vehicleYear!: number;
 
   @Field({ nullable: true })
   vehiclePlatform?: string;
 
   @Field(() => [String], { defaultValue: ['Global'] })
-  vehicleRegion: string[];
+  vehicleRegion!: string[];
 
   @Field({ nullable: true })
   asilRating?: string;
@@ -83,16 +83,16 @@ export class UpdateProjectInput {
 @InputType()
 export class CreateECUInput {
   @Field()
-  projectId: string;
+  projectId!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  partNumber: string;
+  partNumber!: string;
 
   @Field()
-  manufacturer: string;
+  manufacturer!: string;
 
   @Field({ nullable: true })
   supplierCode?: string;
@@ -116,25 +116,25 @@ export class CreateECUInput {
 @InputType()
 export class CreateConnectorInput {
   @Field()
-  ecuId: string;
+  ecuId!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  partNumber: string;
+  partNumber!: string;
 
   @Field()
-  manufacturer: string;
+  manufacturer!: string;
 
   @Field()
-  type: string;
+  type!: string;
 
   @Field()
-  gender: string;
+  gender!: string;
 
   @Field(() => Int)
-  pinCount: number;
+  pinCount!: number;
 
   @Field(() => GraphQLJSON, { nullable: true })
   physical?: any;
@@ -149,10 +149,10 @@ export class CreateConnectorInput {
 @InputType()
 export class CreatePinInput {
   @Field()
-  connectorId: string;
+  connectorId!: string;
 
   @Field()
-  pinNumber: string;
+  pinNumber!: string;
 
   @Field({ nullable: true })
   label?: string;
@@ -167,7 +167,7 @@ export class CreatePinInput {
 @InputType()
 export class CreateWireInput {
   @Field()
-  projectId: string;
+  projectId!: string;
 
   @Field({ nullable: true })
   name?: string;
@@ -224,10 +224,10 @@ export class UpdateWireInput {
 @InputType()
 export class PaginationInput {
   @Field(() => Int, { defaultValue: 1 })
-  page: number;
+  page!: number;
 
   @Field(() => Int, { defaultValue: 20 })
-  pageSize: number;
+  pageSize!: number;
 
   @Field({ nullable: true })
   sortBy?: string;
@@ -263,10 +263,10 @@ export class ProjectFilterInput {
 @InputType()
 export class WireVizImportInput {
   @Field()
-  yamlContent: string;
+  yamlContent!: string;
 
   @Field()
-  projectName: string;
+  projectName!: string;
 
   @Field({ nullable: true })
   projectDescription?: string;
@@ -320,10 +320,10 @@ export class ExcelColumnMappingInput {
 @InputType()
 export class ExcelImportInput {
   @Field(() => GraphQLUpload)
-  file: FileUpload;
+  file!: FileUpload;
 
   @Field()
-  projectName: string;
+  projectName!: string;
 
   @Field({ nullable: true })
   projectDescription?: string;

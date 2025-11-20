@@ -76,19 +76,19 @@ export class ProjectType {
 @ObjectType()
 export class ECUType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  projectId: string;
+  projectId!: string;
 
   @Field()
-  partNumber: string;
+  partNumber!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  manufacturer: string;
+  manufacturer!: string;
 
   @Field({ nullable: true })
   supplierCode?: string;
@@ -112,16 +112,16 @@ export class ECUType {
   metadata?: any;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  modifiedAt: Date;
+  modifiedAt!: Date;
 
   @Field()
-  modifiedBy: string;
+  modifiedBy!: string;
 
   @Field(() => ProjectType, { nullable: true })
   project?: ProjectType;
@@ -136,28 +136,28 @@ export class ECUType {
 @ObjectType()
 export class ConnectorType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  ecuId: string;
+  ecuId!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field()
-  partNumber: string;
+  partNumber!: string;
 
   @Field()
-  manufacturer: string;
+  manufacturer!: string;
 
   @Field()
-  type: string;
+  type!: string;
 
   @Field()
-  gender: string;
+  gender!: string;
 
   @Field(() => Int)
-  pinCount: number;
+  pinCount!: number;
 
   @Field(() => GraphQLJSON, { nullable: true })
   physical?: any;
@@ -166,16 +166,16 @@ export class ConnectorType {
   metadata?: any;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  modifiedAt: Date;
+  modifiedAt!: Date;
 
   @Field()
-  modifiedBy: string;
+  modifiedBy!: string;
 
   @Field(() => ECUType, { nullable: true })
   ecu?: ECUType;
@@ -190,13 +190,13 @@ export class ConnectorType {
 @ObjectType()
 export class PinType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  connectorId: string;
+  connectorId!: string;
 
   @Field()
-  pinNumber: string;
+  pinNumber!: string;
 
   @Field({ nullable: true })
   label?: string;
@@ -205,16 +205,16 @@ export class PinType {
   capabilities?: any;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  modifiedAt: Date;
+  modifiedAt!: Date;
 
   @Field()
-  modifiedBy: string;
+  modifiedBy!: string;
 
   @Field(() => ConnectorType, { nullable: true })
   connector?: ConnectorType;
@@ -232,10 +232,10 @@ export class PinType {
 @ObjectType()
 export class WireType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  projectId: string;
+  projectId!: string;
 
   @Field({ nullable: true })
   name?: string;
@@ -265,16 +265,16 @@ export class WireType {
   metadata?: any;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  modifiedAt: Date;
+  modifiedAt!: Date;
 
   @Field()
-  modifiedBy: string;
+  modifiedBy!: string;
 
   @Field(() => ProjectType, { nullable: true })
   project?: ProjectType;
@@ -292,19 +292,19 @@ export class WireType {
 @ObjectType()
 export class FeatureType {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  projectId: string;
+  projectId!: string;
 
   @Field()
-  name: string;
+  name!: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  category: string;
+  category!: string;
 
   @Field({ nullable: true })
   asilRating?: string;
@@ -319,16 +319,16 @@ export class FeatureType {
   metadata?: any;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  createdBy: string;
+  createdBy!: string;
 
   @Field()
-  modifiedAt: Date;
+  modifiedAt!: Date;
 
   @Field()
-  modifiedBy: string;
+  modifiedBy!: string;
 
   @Field(() => ProjectType, { nullable: true })
   project?: ProjectType;
@@ -340,19 +340,19 @@ export class FeatureType {
 @ObjectType()
 export class PaginatedProjects {
   @Field(() => [ProjectType])
-  items: ProjectType[];
+  items!: ProjectType[];
 
   @Field(() => Int)
-  total: number;
+  total!: number;
 
   @Field(() => Int)
-  page: number;
+  page!: number;
 
   @Field(() => Int)
-  pageSize: number;
+  pageSize!: number;
 
   @Field(() => Int)
-  totalPages: number;
+  totalPages!: number;
 }
 
 /**
@@ -361,7 +361,7 @@ export class PaginatedProjects {
 @ObjectType()
 export class ImportResult {
   @Field()
-  success: boolean;
+  success!: boolean;
 
   @Field({ nullable: true })
   projectId?: string;

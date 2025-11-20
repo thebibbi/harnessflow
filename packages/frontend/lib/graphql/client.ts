@@ -32,7 +32,7 @@ export const apolloClient = new ApolloClient({
         fields: {
           projects: {
             keyArgs: ['filter'],
-            merge(existing, incoming) {
+            merge(_existing, incoming) {
               return incoming;
             },
           },

@@ -149,7 +149,7 @@ export class ProjectResolver {
    * Resolve features for project
    */
   @ResolveField(() => [FeatureType])
-  async features(@Parent() project: ProjectType): Promise<FeatureType[]> {
+  async features(@Parent() _project: ProjectType): Promise<FeatureType[]> {
     // TODO: Implement when FeatureRepository is created
     return [];
   }

@@ -14,11 +14,13 @@ import { GraphQLJSON } from 'graphql-type-json';
 import { ProjectResolver } from './resolvers/project.resolver';
 import { WireResolver } from './resolvers/wire.resolver';
 import { ImportResolver } from './resolvers/import.resolver';
+import { ValidationResolver } from './resolvers/validation.resolver';
 
 // Database and services
 import { DatabaseModule } from '../database';
 import { WireVizModule } from '../ingestion/wireviz';
 import { ExcelModule } from '../ingestion/excel';
+import { ValidationModule } from '../domain/validation';
 
 @Module({
   imports: [
@@ -34,8 +36,9 @@ import { ExcelModule } from '../ingestion/excel';
     DatabaseModule,
     WireVizModule,
     ExcelModule,
+    ValidationModule,
   ],
-  providers: [ProjectResolver, WireResolver, ImportResolver],
+  providers: [ProjectResolver, WireResolver, ImportResolver, ValidationResolver],
   exports: [],
 })
 export class GraphQLModule {}

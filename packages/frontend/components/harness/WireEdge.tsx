@@ -28,8 +28,13 @@ export function WireEdge({
   data,
   selected,
 }: EdgeProps<WireEdgeData>) {
-  const { wire, fromPin, toPin } = data;
+  const { wire, fromPin, toPin } = data || {};
   const { setSelectedEdge, deleteWire } = useHarnessStore();
+
+  // Early return if no data
+  if (!wire || !fromPin || !toPin) {
+    return null;
+  }
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
