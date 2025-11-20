@@ -1,0 +1,25 @@
+# Simple WireViz Example
+# A basic two-connector harness with a 3-wire cable
+
+connectors:
+  X1:
+    type: Molex-5569
+    subtype: female
+    pincount: 3
+    pinlabels: [GND, VCC, SIG]
+
+  X2:
+    type: Molex-5569
+    subtype: male
+    pincount: 3
+    pinlabels: [GND, VCC, SIG]
+
+cables:
+  W1:
+    gauge: 22 AWG
+    length: 1.5
+    colors: [BK, RD, BU]
+    color_code: IEC
+
+connections:
+  - [X1, [1, 2, 3], W1, [1, 2, 3], X2]
