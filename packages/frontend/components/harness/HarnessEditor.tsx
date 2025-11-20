@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -22,6 +22,7 @@ import { useHarnessStore } from '@/lib/store/harness-store';
 import { ECUNode } from './ECUNode';
 import { ConnectorNode } from './ConnectorNode';
 import { WireEdge } from './WireEdge';
+import { WireEditDialog } from './WireEditDialog';
 
 const nodeTypes = {
   ecuNode: ECUNode,
@@ -49,6 +50,8 @@ function HarnessEditorInner() {
     isSaving,
     lastSaved,
   } = useHarnessStore();
+
+  const [editingWireId, setEditingWireId] = useState<string | null>(null);
 
   const proOptions = { hideAttribution: true };
 
@@ -195,13 +198,24 @@ function HarnessEditorInner() {
                 </div>
               )}
               {selectedEdgeId && (
-                <div className="text-xs">
+                <div className="text-xs space-y-2">
                   <p className="text-gray-600">Selected: Wire {selectedEdgeId}</p>
+                  <button
+                    onClick={() => setEditingWireId(selectedEdgeId)}
+                    className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                  >
+                    Edit Wire Properties
+                  </button>
                 </div>
               )}
             </Panel>
           )}
         </ReactFlow>
+
+        {/* Wire Edit Dialog */}
+        {editingWireId && (
+          <WireEditDialog wireId={editingWireId} onClose={() => setEditingWireId(null)} />
+        )}
       </div>
     </div>
   );
