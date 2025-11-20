@@ -6,6 +6,8 @@
 
 import { create } from 'zustand';
 import { Node, Edge, NodeChange, EdgeChange, applyNodeChanges, applyEdgeChanges } from 'reactflow';
+import { apolloClient } from '../graphql/client';
+import { CREATE_WIRE, DELETE_WIRE, UPDATE_WIRE } from '../graphql/queries';
 
 export interface ECU {
   id: string;
@@ -78,9 +80,14 @@ interface HarnessStore {
   setSelectedEdge: (id: string | null) => void;
 
   // Actions
-  addWire: (fromPinId: string, toPinId: string) => void;
-  deleteWire: (wireId: string) => void;
-  updateWire: (wireId: string, updates: Partial<Wire>) => void;
+  addWire: (fromPinId: string, toPinId: string) => Promise<void>;
+  deleteWire: (wireId: string) => Promise<void>;
+  updateWire: (wireId: string, updates: Partial<Wire>) => Promise<void>;
+
+  // Sync state
+  isSaving: boolean;
+  lastSaved: Date | null;
+  hasUnsavedChanges: boolean;
 
   // Helpers
   getECUById: (id: string) => ECU | undefined;
@@ -99,6 +106,9 @@ export const useHarnessStore = create<HarnessStore>((set, get) => ({
   edges: [],
   selectedNodeId: null,
   selectedEdgeId: null,
+  isSaving: false,
+  lastSaved: null,
+  hasUnsavedChanges: false,
 
   // Setters
   setProject: (project) => set({ project }),
@@ -122,54 +132,118 @@ export const useHarnessStore = create<HarnessStore>((set, get) => ({
   },
 
   // Actions
-  addWire: (fromPinId, toPinId) => {
+  addWire: async (fromPinId, toPinId) => {
     const { project } = get();
     if (!project) return;
 
-    const newWire: Wire = {
-      id: `temp-${Date.now()}`,
-      fromPinId,
-      toPinId,
-      name: `Wire_${project.wires.length + 1}`,
-      physical: {},
-      electrical: {},
-    };
+    set({ isSaving: true });
 
-    set({
-      project: {
+    try {
+      // Call GraphQL mutation
+      const result = await apolloClient.mutate({
+        mutation: CREATE_WIRE,
+        variables: {
+          input: {
+            projectId: project.id,
+            fromPinId,
+            toPinId,
+            name: `Wire_${project.wires.length + 1}`,
+          },
+        },
+      });
+
+      const newWire = result.data.createWire;
+
+      // Update local state with the created wire
+      const updatedProject = {
         ...project,
         wires: [...project.wires, newWire],
-      },
-    });
+      };
 
-    // Re-initialize to update edges
-    get().initializeFromProject({ ...project, wires: [...project.wires, newWire] });
+      set({
+        project: updatedProject,
+        lastSaved: new Date(),
+        isSaving: false,
+      });
+
+      // Re-initialize to update edges
+      get().initializeFromProject(updatedProject);
+    } catch (error) {
+      console.error('Failed to create wire:', error);
+      set({ isSaving: false });
+      alert('Failed to create wire. Please try again.');
+    }
   },
 
-  deleteWire: (wireId) => {
+  deleteWire: async (wireId) => {
     const { project } = get();
     if (!project) return;
 
-    const updatedProject = {
-      ...project,
-      wires: project.wires.filter((w) => w.id !== wireId),
-    };
+    set({ isSaving: true });
 
-    set({ project: updatedProject });
-    get().initializeFromProject(updatedProject);
+    try {
+      // Call GraphQL mutation
+      await apolloClient.mutate({
+        mutation: DELETE_WIRE,
+        variables: { id: wireId },
+      });
+
+      // Update local state
+      const updatedProject = {
+        ...project,
+        wires: project.wires.filter((w) => w.id !== wireId),
+      };
+
+      set({
+        project: updatedProject,
+        lastSaved: new Date(),
+        isSaving: false,
+      });
+
+      get().initializeFromProject(updatedProject);
+    } catch (error) {
+      console.error('Failed to delete wire:', error);
+      set({ isSaving: false });
+      alert('Failed to delete wire. Please try again.');
+    }
   },
 
-  updateWire: (wireId, updates) => {
+  updateWire: async (wireId, updates) => {
     const { project } = get();
     if (!project) return;
 
-    const updatedProject = {
-      ...project,
-      wires: project.wires.map((w) => (w.id === wireId ? { ...w, ...updates } : w)),
-    };
+    set({ isSaving: true });
 
-    set({ project: updatedProject });
-    get().initializeFromProject(updatedProject);
+    try {
+      // Call GraphQL mutation
+      const result = await apolloClient.mutate({
+        mutation: UPDATE_WIRE,
+        variables: {
+          id: wireId,
+          input: updates,
+        },
+      });
+
+      const updatedWire = result.data.updateWire;
+
+      // Update local state
+      const updatedProject = {
+        ...project,
+        wires: project.wires.map((w) => (w.id === wireId ? updatedWire : w)),
+      };
+
+      set({
+        project: updatedProject,
+        lastSaved: new Date(),
+        isSaving: false,
+      });
+
+      get().initializeFromProject(updatedProject);
+    } catch (error) {
+      console.error('Failed to update wire:', error);
+      set({ isSaving: false });
+      alert('Failed to update wire. Please try again.');
+    }
   },
 
   // Helpers
